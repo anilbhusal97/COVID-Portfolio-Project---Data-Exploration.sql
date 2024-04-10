@@ -5,6 +5,7 @@ select location, date, total_cases, new_cases,total_deaths
 ,cast(total_deaths as float)  / cast(total_cases as float) * 100 as Deathpercentage    
 from CovidDeaths WHere location like '%indi%' and continent is not null 
 order by 1,2;
+
 -- looking at total cases vs population
 select location, date, total_cases, population
 ,(cast(total_cases as float)  / cast(population as float)) * 100 as infectedpercentage    
@@ -90,6 +91,7 @@ where dea.continent is not null
 order by 2,3;
 
 -- Rolling count using window function and partition by location and order by date
+
 select dea.continent, dea.location, dea.date, dea.population, new_vaccinations,
 SUM(convert(float, new_vaccinations  )) over(partition by dea.location Order by dea.date) as Rolling_People_vaccinated
 from CovidDeaths as dea
@@ -101,19 +103,8 @@ order by 2,3;
 
 --Rolling count using window function and partition by location and order by date and % people got vaccinated
 
-select dea.continent, dea.location, dea.date, dea.population, new_vaccinations,
-SUM(convert(float, new_vaccinations  )) over(partition by dea.location Order by dea.date) as RollingPeopleVaccinated,
-(RollingPeopleVaccinated/ population) * 100
-from CovidDeaths as dea
-join CovidVaccinations as vac
-	on dea.location = vac.location
-	and dea.date = vac.date
-where dea.continent is not null
-order by 2,3;
-
---we will get error as we cannot use a column which is created now. for this we can use CTE Method or Temp table.
-
--- using CTE
+-- Method
+-- 1) using CTE
 With popVSvac(continent,location, date,Population, new_vaccinations,RollingPeopleVaccinated)
 as
 (select dea.continent, dea.location, dea.date, dea.population, new_vaccinations,
@@ -128,7 +119,7 @@ where dea.continent is not null
 select * ,(RollingPeopleVaccinated / Population) * 100 as Percentage_got_vaccinated
 from popVSvac;
 
--- using Temp table(its quite hard comapre to CTE... better to use CTE instead
+--2) using Temp table(its quite hard comapre to CTE... better to use CTE instead
 
 drop table if exists #Percentpopulationvaccinated
 create table #PercentpopulationVaccinated(
@@ -152,7 +143,7 @@ select * ,(RollingPeopleVaccinated /Population) * 100 as Percentage_got_vaccinat
 from #PercentpopulationVaccinated;
 
 --creating view for visualisations
---A
+--1)
 create view PercentPopulationvaccinated AS
 select dea.continent, dea.location, dea.date, dea.population, new_vaccinations,
 SUM(convert(float, new_vaccinations  )) over(partition by dea.location Order by dea.date) as Rolling_People_vaccinated
@@ -165,7 +156,7 @@ where dea.continent is not null
 
 select * from PercentPopulationvaccinated;
 
---B
+--2)
 
 Create view PopulationVSVaccination as
 With popVSvac(continent,location, date,Population, new_vaccinations,RollingPeopleVaccinated)
